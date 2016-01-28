@@ -36,3 +36,6 @@ Licence
 Please see the LICENSE file
 
 Note this software is a shell wrapper / user interface for included binaries that may haver thier own licenses
+
+dfu-util is licensed under GPL version 2
+http://dfu-util.sourceforge.net/
