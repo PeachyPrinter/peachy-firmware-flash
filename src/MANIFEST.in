@@ -1,0 +1,3 @@
+include dependancies/windows/*
+include dependancies/mac/*
+include dependancies/linux/*
