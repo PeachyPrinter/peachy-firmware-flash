@@ -69,12 +69,16 @@ class WindowsFirmwareUpdater(FirmwareUpdater):
 
 
 def get_firmware_updater(self, logger=None, peachy_printer_address='0483:df11'):
-    dependancies_path = os.path.join('dependancies', 'windows')  #This wont work one installed via sdist
+    path = os.path.dirname(os.path.abspath(__file__))
+    dependancies_path = os.path.join(path, 'dependancies', 'windows')
     if 'win' in sys.platform:
+        dependancies_path = os.path.join(path, 'dependancies', 'windows')
         return WindowsFirmwareUpdater(logger, dependancies_path)
     elif 'linux' in sys.platform:
+        dependancies_path = os.path.join(path, 'dependancies', 'linux')
         return LinuxFirmwareUpdater(logger, dependancies_path)
     elif 'darwin' in sys.platform:
+        dependancies_path = os.path.join(path, 'dependancies', 'mac')
         return MacFirmwareUpdater(logger, dependancies_path)
     else:
         if logger:
