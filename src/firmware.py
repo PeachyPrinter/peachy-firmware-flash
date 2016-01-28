@@ -1,13 +1,30 @@
-class FirmwareChecker(object):
-    def init(self):
-        pass
-
-    def get_avaliable_versions(self, hardware_version):
-        pass
+import sys
 
 
 class FirmwareUpdater(object):
-    def init(self):
+    def init(self, logger=None):
+        pass
+
+    def check_ready(self):
+        pass
+
+    def update(self, firmware_path):
+        pass
+
+
+class MacFirmwareUpdater(FirmwareUpdater):
+    def init(self, logger=None):
+        pass
+
+    def check_ready(self):
+        pass
+
+    def update(self, firmware_path):
+        pass
+
+
+class LinuxFirmwareUpdater(FirmwareUpdater):
+    def init(self, logger=None):
         pass
 
     def check_ready(self):
@@ -18,15 +35,24 @@ class FirmwareUpdater(object):
 
 
 class WindowsFirmwareUpdater(FirmwareUpdater):
-    def init(self):
+    def init(self, logger=None):
         pass
 
     def check_ready(self):
         pass
 
-    def update(self, firmware_path):
+    def update(self, firmware_version):
         pass
 
 
-def get_firmware_updater(self):
-    return WindowsFirmwareUpdater()
+def get_firmware_updater(self, logger=None):
+    if 'win' in sys.platform:
+        return WindowsFirmwareUpdater(logger)
+    elif 'linux' in sys.platform:
+        return LinuxFirmwareUpdater(logger)
+    elif 'darwin' in sys.platform:
+        return MacFirmwareUpdater(logger)
+    else:
+        if logger:
+            logger.error("Platform {} is unsupported for firmware updates".format(sys.platform))
+        raise Exception("Unsupported Platform")
