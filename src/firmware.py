@@ -4,7 +4,7 @@ from subprocess import Popen, PIPE
 
 
 class FirmwareUpdater(object):
-    def init(self, logger=None, peachy_printer_address='0483:df11'):
+    def __init__(self, logger=None, peachy_printer_address='0483:df11'):
         raise NotImplementedError()
 
     def check_ready(self):
@@ -15,7 +15,7 @@ class FirmwareUpdater(object):
 
 
 class MacFirmwareUpdater(FirmwareUpdater):
-    def init(self, logger=None, peachy_printer_address='0483:df11', test_mode=True):
+    def __init__(self, logger=None, peachy_printer_address='0483:df11', test_mode=True):
         self._test_mode = test_mode
         if self._test_mode:
             return True
@@ -30,7 +30,7 @@ class MacFirmwareUpdater(FirmwareUpdater):
 
 
 class LinuxFirmwareUpdater(FirmwareUpdater):
-    def init(self, logger=None, peachy_printer_address='0483:df11', test_mode=True):
+    def __init__(self, logger=None, peachy_printer_address='0483:df11', test_mode=True):
         self._test_mode = test_mode
         if self._test_mode:
             pass
@@ -92,7 +92,7 @@ class WindowsFirmwareUpdater(FirmwareUpdater):
                 raise Exception('Failed to update device')
 
 
-def get_firmware_updater(self, logger=None, peachy_printer_address='0483:df11'):
+def get_firmware_updater(logger=None, peachy_printer_address='0483:df11'):
     path = os.path.dirname(os.path.abspath(__file__))
     dependancies_path = os.path.join(path, 'dependancies', 'windows')
     if 'win' in sys.platform:
