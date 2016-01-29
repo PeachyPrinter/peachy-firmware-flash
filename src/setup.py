@@ -16,7 +16,7 @@ setup(
                   },
     install_requires=[''],
     packages=find_packages(),
-    py_modules=['firmware'],
+    py_modules=['firmware', 'VERSION'],
     include_package_data=True
       )
 
