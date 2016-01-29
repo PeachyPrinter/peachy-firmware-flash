@@ -87,7 +87,6 @@ IF NOT "%ERRORLEVEL%" == "0" (
     EXIT /B 2
 )
 
-cd ..
 
 echo ------------------------------------
 echo Moving file
