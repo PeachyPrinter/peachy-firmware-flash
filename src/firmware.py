@@ -10,7 +10,7 @@ class FirmwareUpdater(object):
     def check_ready(self):
         raise NotImplementedError()
 
-    def update(self, firmware_path, complete_call_back=None):
+    def update(self, firmware_path):
         raise NotImplementedError()
 
 
@@ -28,7 +28,7 @@ class MacFirmwareUpdater(FirmwareUpdater):
         else:
             pass
 
-    def update(self, firmware_path, complete_call_back=None):
+    def update(self, firmware_path):
         if self._test_mode:
             return True
         else:
@@ -49,7 +49,7 @@ class LinuxFirmwareUpdater(FirmwareUpdater):
         else:
             pass
 
-    def update(self, firmware_path, complete_call_back=None):
+    def update(self, firmware_path):
         if self._test_mode:
             return True
         else:
@@ -76,7 +76,7 @@ class WindowsFirmwareUpdater(FirmwareUpdater):
             process.wait()
             return self.usb_address in err
 
-    def update(self, firmware_path, complete_call_back=None):
+    def update(self, firmware_path):
         if self._test_mode:
             return True
         else:
