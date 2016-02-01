@@ -18,15 +18,21 @@ class MacFirmwareUpdater(FirmwareUpdater):
     def __init__(self, logger=None, peachy_printer_address='0483:df11', test_mode=True):
         self._test_mode = test_mode
         if self._test_mode:
-            return True
+            pass
         else:
             pass
 
     def check_ready(self):
-        pass
+        if self._test_mode:
+            return True
+        else:
+            pass
 
     def update(self, firmware_path, complete_call_back=None):
-        pass
+        if self._test_mode:
+            return True
+        else:
+            pass
 
 
 class LinuxFirmwareUpdater(FirmwareUpdater):
