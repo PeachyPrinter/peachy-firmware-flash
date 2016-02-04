@@ -1,14 +1,37 @@
 import sys
 import os
+import usb
 from subprocess import Popen, PIPE
 
 
+BOOTLOADER_IDVENDOR=0x0483
+BOOTLOADER_IDPRODUCT=0xdf11
+PEACHY_IDVENDOR=0x16d0
+PEACHY_IDPRODUCT=0x0af3
+
 class FirmwareUpdater(object):
     def __init__(self, logger=None, peachy_printer_address='0483:df11'):
-        raise NotImplementedError()
+        self._bootloaders = []
+        self._peachyPrinters = []
+
+    def list_usb_devices(self):
+        # Clear these each time so we can use this function a whole bunch
+        self._bootloaders = []
+        self._peachyPrinters = []
+        for dev in usb.core.find(find_all=True):
+            if (dev.idVendor == BOOTLOADER_IDVENDOR) and (dev.idProduct == BOOTLOADER_IDPRODUCT):
+                self._bootloaders.append(dev)
+            elif (dev.idVendor == PEACHY_IDVENDOR) and (dev.idProduct == PEACHY_IDPRODUCT):
+                self._peachyPrinters.append(dev)
 
     def check_ready(self):
-        raise NotImplementedError()
+        self.list_usb_devices()
+        # Asserting we have a single bootloader and no peachys plugged in. This should catch most error cases
+        # including a peachy board failing to switch to bootloader and there being a bootloader device already plugged in.
+        if (len(self._bootloaders) == 1) and (len(self._peachyPrinters) == 0):
+            return True
+        else:
+            return False
 
     def update(self, firmware_path, complete_call_back=None):
         raise NotImplementedError()
@@ -49,6 +72,9 @@ class LinuxFirmwareUpdater(FirmwareUpdater):
         else:
             pass
 
+class WindowsDriver():
+    def __init__():
+        pass
 
 class WindowsFirmwareUpdater(FirmwareUpdater):
     def __init__(self, logger, dependancy_path, peachy_printer_address='0483:df11', test_mode=True):
@@ -79,7 +105,6 @@ class WindowsFirmwareUpdater(FirmwareUpdater):
                 '-a', '0',
                 '--dfuse-address', '0x08000000',
                 '-D', firmware_path,
-                '-v',
                 '-d', self.usb_address
                 ], stdout=PIPE, stderr=PIPE)
             (out, err) = process.communicate()

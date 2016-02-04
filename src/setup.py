@@ -14,7 +14,7 @@ setup(
                   '': ['*', 'peachyprinter/dependancies/mac/*'],
                   '': ['*', 'peachyprinter/dependancies/linux/*'],
                   },
-    install_requires=[''],
+    install_requires=['pyusb==1.0.0b2'],
     packages=find_packages(),
     py_modules=['firmware', 'VERSION'],
     include_package_data=True

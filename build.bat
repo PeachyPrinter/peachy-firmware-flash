@@ -66,6 +66,13 @@ echo ------------------------------------
 echo Create Peachy Tools Api
 echo ------------------------------------
 
+python -m pip install pyusb==1.0.0b2
+IF NOT "%ERRORLEVEL%" == "0" (
+    echo "FAILED TO INSTALL PYUSB"
+    cd ..
+    EXIT /B 4
+)
+
 python setup.py sdist
 IF NOT "%ERRORLEVEL%" == "0" (
     echo "FAILED PACKAGING ABORTING"
