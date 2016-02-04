@@ -3,61 +3,57 @@ import os
 import usb
 from subprocess import Popen, PIPE
 
-BOOTLOADER_IDVENDOR=0x0483
-BOOTLOADER_IDPRODUCT=0xdf11
-PEACHY_IDVENDOR=0x16d0
-PEACHY_IDPRODUCT=0x0af3
-
 class FirmwareUpdater(object):
-    def __init__(self, logger=None, peachy_printer_address='0483:df11'):
-        self._bootloaders = []
-        self._peachyPrinters = []
+    def __init__(self, logger=None, bootloader_idvendor=0x0483, bootloader_idproduct=0xdf11, peachy_idvendor=0x16d0, peachy_idproduct=0x0af3):
+	self._bootloader_idvendor=bootloader_idvendor
+	self._bootloader_idproduct=bootloader_idproduct
+	self._peachy_idvendor=peachy_idvendor
+	self._peachy_idproduct=peachy_idproduct
+        self._logger = logger
+	self.dependancy_path = dependancy_path
+	self.usb_address = "{0:x}:{1:x}".format(bootloader_idvendor,bootloader_idproduct)
 
-    def list_usb_devices(self):
-        # Clear these each time so we can use this function a whole bunch
+    def _list_usb_devices(self):
         self._bootloaders = []
         self._peachyPrinters = []
         for dev in usb.core.find(find_all=True):
-            if (dev.idVendor == BOOTLOADER_IDVENDOR) and (dev.idProduct == BOOTLOADER_IDPRODUCT):
+            if (dev.idVendor == bootloader_idvendor) and (dev.idProduct == bootloader_idproduct):
                 self._bootloaders.append(dev)
-            elif (dev.idVendor == PEACHY_IDVENDOR) and (dev.idProduct == PEACHY_IDPRODUCT):
+            elif (dev.idVendor == peachy_idvendor) and (dev.idProduct == peachy_idproduct):
                 self._peachyPrinters.append(dev)
 
     def check_ready(self):
-        self.list_usb_devices()
-        # Asserting we have a single bootloader and no peachys plugged in. This should catch most error cases
-        # including a peachy board failing to switch to bootloader and there being a bootloader device already plugged in.
-        if (len(self._bootloaders) == 1) and (len(self._peachyPrinters) == 0):
+        self._list_usb_devices()
+        num_bootloaders = len(self._bootloaders)
+        num_peachyPrinters = len(self._peachyPrinters)
+        if (num_peachyPrinters) == 1) and (num_peachyPrinters) == 0):
             return True
-        else:
+        elif (num_peachyPrinters) == 0) and (num_peachyPrinters) <= 1):
             return False
+        else:
+            if self._logger:
+                self._logger.error("{0} peachy printers and {1} bootloaders found".format(num_peachyPrinters, num_bootloaders)
+            raise Exception("{0} peachy printers and {1} bootloaders found".format(num_peachyPrinters, num_bootloaders))
 
     def update(self, firmware_path, complete_call_back=None):
         raise NotImplementedError()
 
 
 class MacFirmwareUpdater(FirmwareUpdater):
-    def __init__(self, logger=None, peachy_printer_address='0483:df11', test_mode=True):
-        self._test_mode = test_mode
-        if self._test_mode:
-            return True
-        else:
-            pass
+
+    @property
+    def dfu_bin(self):
+    	pass
 
     def update(self, firmware_path, complete_call_back=None):
         pass
 
 
 class LinuxFirmwareUpdater(FirmwareUpdater):
-    def __init__(self, dependancy_path, logger=None, peachy_printer_address='0483:df11', test_mode=True):
-        self._test_mode = test_mode
-        if self._test_mode:
-            pass
-        else:
-            self.logger = logger
-            self.dependancy_path = dependancy_path
-            self.usb_address = peachy_printer_address
-            self.dfu_bin = os.path.join(self.dependancy_path, 'dfu-util')
+
+    @property
+    def dfu_bin(self):
+        return self.dfu_bin = os.path.join(self.dependancy_path, 'dfu-util')
 
     def update(self, firmware_path, complete_call_back=None):
         if self._test_mode:
@@ -73,50 +69,40 @@ class LinuxFirmwareUpdater(FirmwareUpdater):
             (out, err) = process.communicate()
             exit_code = process.wait()
             if exit_code != 0:
-                if self.logger:
-                    self.logger.error("Output: {}".format(out))
-                    self.logger.error("Error: {}".format(err))
-                    self.logger.error("Exit Code: {}".format(exit_code))
+                if self._logger:
+                    self._logger.error("Output: {}".format(out))
+                    self._logger.error("Error: {}".format(err))
+                    self._logger.error("Exit Code: {}".format(exit_code))
                 raise Exception('Failed to update device')
 
 
 class WindowsFirmwareUpdater(FirmwareUpdater):
-    def __init__(self, logger, dependancy_path, peachy_printer_address='0483:df11', test_mode=True):
-        self._test_mode = test_mode
-        if self._test_mode:
-            pass
-        else:
-            self.logger = logger
-            self.dependancy_path = dependancy_path
-            self.usb_address = peachy_printer_address
-            self.dfu_exe = os.path.join(self.dependancy_path, 'dfu-util-static.exe')
-            self.driver_exe = os.path.join(self.dependancy_path, 'wdi-simple.exe')
+
+    @property
+    def driver_bin(self):
+         return os.path.join(self.dependancy_path, 'wdi-simple.exe')
+
+    @property
+    def dfu_bin(self):
+        return os.path.join(self.dependancy_path, 'dfu-util-static.exe')
 
     def switch_driver(self):
-        # This is a one way force, it will only change the driver if it needs to be changed.
         process = Popen(
-            [self.driver_exe, '-b'],
+            [self.driver_bin, '-b'],
             stdout=PIPE, stderr=PIPE)
         (out, err) = process.communicate()
         exit_code = process.wait()
 
-        # I'm recording these parsed states here for now, in case we need them for debug later
-        board_state = []
-        driver = []
-        driver_version = []
-
-        returned_lines = out.split('\n')  # Split by each message line
+        returned_lines = out.split('\n')
         for line in returned_lines:
             split_line = line.split(',')
-            if (len(split_line) == 3) and ("DRIVER" in split_line[1]):  # DRIVER info line
-                board_state.append(split_line[0])
-                driver.append(split_line[1].split(':')[1])
-                driver_version.append(split_line[2].split(':')[1])
-            elif (len(split_line) == 1) and ("RETURN" in split_line[0]):  # RETURN code for the flashing
+            if (len(split_line) == 2) and ("RETURN" in split_line[0]):
                 driver_code = split_line[0].split(':')[1]
+		driver_code_message = split_line[1]
+
         if driver_code:
-            self.logger.error("Driver Output: {0}".format(out))
-            self.logger.error("Driver Error Code: {0}".format(driver_code))
+            self._logger.error("Driver Output: {0}".format(out))
+            self._logger.error("Driver Error Code: {0}, {1}".format(driver_code, driver_code_message))
         return driver_code
 
     def update(self, firmware_path, complete_call_back=None):
@@ -126,7 +112,7 @@ class WindowsFirmwareUpdater(FirmwareUpdater):
             driver_return=self.switch_driver()
             if driver_return == 0:
                 process = Popen([
-                    self.dfu_exe,
+                    self.dfu_bin,
                     '-a', '0',
                     '--dfuse-address', '0x08000000',
                     '-D', firmware_path,
@@ -135,10 +121,10 @@ class WindowsFirmwareUpdater(FirmwareUpdater):
                 (out, err) = process.communicate()
                 exit_code = process.wait()
                 if exit_code != 0:
-                    if self.logger:
-                        self.logger.error("Output: {}".format(out))
-                        self.logger.error("Error: {}".format(err))
-                        self.logger.error("Exit Code: {}".format(exit_code))
+                    if self._logger:
+                        self._logger.error("Output: {}".format(out))
+                        self._logger.error("Error: {}".format(err))
+                        self._logger.error("Exit Code: {}".format(exit_code))
                     raise Exception('Failed to update device')
             else:
                 raise Exception('Failed to switch driver')
