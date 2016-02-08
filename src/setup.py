@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages
+from setuptools import setup
 from setuptools.command.install import install as _Install
 from firmware.VERSION import version
 
@@ -10,13 +10,9 @@ setup(
     url="http://www.peachyprinter.com",
     author="Peachy Printer",
     author_email="software+peachyprintertools@peachyprinter.com",
-    package_data={'': ['*', 'firmware/dependancies/windows/*'],
-                  # '': ['*', 'firmware/dependancies/mac/*'],
-                  '': ['*', 'firmware/dependancies/linux/*'],
-                  },
     install_requires=['pyusb==1.0.0b2'],
-    packages=find_packages(),
-    py_modules=['firmware'],
+    packages=['firmware'],
+    py_modules=[],
     include_package_data=True
       )
 
