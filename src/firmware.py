@@ -55,7 +55,13 @@ class LinuxFirmwareUpdater(FirmwareUpdater):
 
     @property
     def dfu_bin(self):
-        return os.path.join(self.dependancy_path, 'dfu-util')
+        bin_file = os.path.join(self.dependancy_path, 'dfu-util')
+        if os.path.isfile(bin_file):
+            return os.path.join(self.dependancy_path, 'dfu-util')
+        else:
+            if self._logger:
+                self._logger.error("Binary at {} missing.".format(bin_file))
+            raise Exception("Binary at {} missing.".format(bin_file))
 
     def update(self, firmware_path):
             process = Popen([
