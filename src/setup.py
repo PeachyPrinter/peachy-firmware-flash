@@ -10,13 +10,13 @@ setup(
     url="http://www.peachyprinter.com",
     author="Peachy Printer",
     author_email="software+peachyprintertools@peachyprinter.com",
-    package_data={'': ['*', 'peachyprinter/dependancies/windows/*'],
-                  '': ['*', 'peachyprinter/dependancies/mac/*'],
-                  '': ['*', 'peachyprinter/dependancies/linux/*'],
+    package_data={'': ['*', 'firmware/dependancies/windows/*'],
+                  '': ['*', 'firmware/dependancies/mac/*'],
+                  '': ['*', 'firmware/dependancies/linux/*'],
                   },
     install_requires=['pyusb==1.0.0b2'],
     packages=find_packages(),
-    py_modules=['firmware', 'VERSION'],
+    py_modules=['firmware'],
     include_package_data=True
       )
 

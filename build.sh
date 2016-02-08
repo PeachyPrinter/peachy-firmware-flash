@@ -59,7 +59,7 @@ echo "# THIS IS A GENERATED FILE " > version.properties
 echo "version='$VERSION'" >> version.properties
 echo "revision='$GIT_REV'" >> version.properties
 echo "Git Revision Number is $GIT_REV_COUNT"
-cp version.properties src/VERSION.py
+cp version.properties src/firmware/VERSION.py
 
 python -m pip install pyusb==1.0.0b2
 
