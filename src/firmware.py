@@ -28,9 +28,9 @@ class FirmwareUpdater(object):
         self._list_usb_devices()
         num_bootloaders = len(self._bootloaders)
         num_peachyPrinters = len(self._peachyPrinters)
-        if (num_peachyPrinters == 1) and (num_peachyPrinters == 0):
+        if (num_bootloaders == 1) and (num_peachyPrinters == 0):
             return True
-        elif (num_peachyPrinters == 0) and (num_peachyPrinters <= 1):
+        elif (num_bootloaders == 0) and (num_peachyPrinters <= 1):
             return False
         else:
             if self._logger:
