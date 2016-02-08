@@ -37,7 +37,7 @@ class FirmwareUpdater(object):
                 self._logger.error("{0} peachy printers and {1} bootloaders found".format(num_peachyPrinters, num_bootloaders))
             raise Exception("{0} peachy printers and {1} bootloaders found".format(num_peachyPrinters, num_bootloaders))
 
-    def update(self, firmware_path, complete_call_back=None):
+    def update(self, firmware_path):
         raise NotImplementedError()
 
 
@@ -47,7 +47,7 @@ class MacFirmwareUpdater(FirmwareUpdater):
     def dfu_bin(self):
         pass
 
-    def update(self, firmware_path, complete_call_back=None):
+    def update(self, firmware_path):
         raise NotImplementedError()
 
 
@@ -57,10 +57,7 @@ class LinuxFirmwareUpdater(FirmwareUpdater):
     def dfu_bin(self):
         return os.path.join(self.dependancy_path, 'dfu-util')
 
-    def update(self, firmware_path, complete_call_back=None):
-        if self._test_mode:
-            return True
-        else:
+    def update(self, firmware_path):
             process = Popen([
                 self.dfu_bin,
                 '-a', '0',
@@ -75,7 +72,9 @@ class LinuxFirmwareUpdater(FirmwareUpdater):
                     self._logger.error("Output: {}".format(out))
                     self._logger.error("Error: {}".format(err))
                     self._logger.error("Exit Code: {}".format(exit_code))
-                raise Exception('Failed to update device')
+                return False
+            else:
+                return True
 
 
 class WindowsFirmwareUpdater(FirmwareUpdater):
@@ -107,29 +106,28 @@ class WindowsFirmwareUpdater(FirmwareUpdater):
             self._logger.error("Driver Error Code: {0}, {1}".format(driver_code, driver_code_message))
         return driver_code
 
-    def update(self, firmware_path, complete_call_back=None):
-        if self._test_mode:
-            return True
-        else:
-            driver_return = self.switch_driver()
-            if driver_return == 0:
-                process = Popen([
-                    self.dfu_bin,
-                    '-a', '0',
-                    '--dfuse-address', '0x08000000',
-                    '-D', firmware_path,
-                    '-d', self.usb_address
-                    ], stdout=PIPE, stderr=PIPE)
-                (out, err) = process.communicate()
-                exit_code = process.wait()
-                if exit_code != 0:
-                    if self._logger:
-                        self._logger.error("Output: {}".format(out))
-                        self._logger.error("Error: {}".format(err))
-                        self._logger.error("Exit Code: {}".format(exit_code))
-                    raise Exception('Failed to update device')
+    def update(self, firmware_path):
+        driver_return = self.switch_driver()
+        if driver_return == 0:
+            process = Popen([
+                self.dfu_bin,
+                '-a', '0',
+                '--dfuse-address', '0x08000000',
+                '-D', firmware_path,
+                '-d', self.usb_address
+                ], stdout=PIPE, stderr=PIPE)
+            (out, err) = process.communicate()
+            exit_code = process.wait()
+            if exit_code != 0:
+                if self._logger:
+                    self._logger.error("Output: {}".format(out))
+                    self._logger.error("Error: {}".format(err))
+                    self._logger.error("Exit Code: {}".format(exit_code))
+                return False
             else:
-                raise Exception('Failed to switch driver')
+                return True
+        else:
+            raise Exception('Failed to switch driver')
 
 
 def get_firmware_updater(logger=None, bootloader_idvendor=0x0483, bootloader_idproduct=0xdf11, peachy_idvendor=0x16d0, peachy_idproduct=0x0af3):
