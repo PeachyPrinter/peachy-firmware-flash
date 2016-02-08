@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 from setuptools.command.install import install as _Install
-from VERSION import version
+from firmware.VERSION import version
 
 setup(
     name='PeachyPrinterFirmwareAPI',
