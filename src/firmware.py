@@ -19,9 +19,9 @@ class FirmwareUpdater(object):
         self._bootloaders = []
         self._peachyPrinters = []
         for dev in usb.core.find(find_all=True):
-            if (dev.idVendor == self.bootloader_idvendor) and (dev.idProduct == self.bootloader_idproduct):
+            if (dev.idVendor == self._bootloader_idvendor) and (dev.idProduct == self._bootloader_idproduct):
                 self._bootloaders.append(dev)
-            elif (dev.idVendor == self.peachy_idvendor) and (dev.idProduct == self.peachy_idproduct):
+            elif (dev.idVendor == self._peachy_idvendor) and (dev.idProduct == self._peachy_idproduct):
                 self._peachyPrinters.append(dev)
 
     def check_ready(self):
