@@ -3,36 +3,38 @@ import os
 import usb
 from subprocess import Popen, PIPE
 
+
 class FirmwareUpdater(object):
-    def __init__(self, logger=None, bootloader_idvendor=0x0483, bootloader_idproduct=0xdf11, peachy_idvendor=0x16d0, peachy_idproduct=0x0af3):
-	self._bootloader_idvendor=bootloader_idvendor
-	self._bootloader_idproduct=bootloader_idproduct
-	self._peachy_idvendor=peachy_idvendor
-	self._peachy_idproduct=peachy_idproduct
+    def __init__(self, dependancy_path, bootloader_idvendor, bootloader_idproduct, peachy_idvendor, peachy_idproduct, logger=None):
+        self._bootloader_idvendor = bootloader_idvendor
+        self._bootloader_idproduct = bootloader_idproduct
+        self._peachy_idvendor = peachy_idvendor
+        self._peachy_idproduct = peachy_idproduct
         self._logger = logger
-	self.dependancy_path = dependancy_path
-	self.usb_address = "{0:x}:{1:x}".format(bootloader_idvendor,bootloader_idproduct)
+
+        self.dependancy_path = dependancy_path
+        self.usb_address = "{0:x}:{1:x}".format(bootloader_idvendor, bootloader_idproduct)
 
     def _list_usb_devices(self):
         self._bootloaders = []
         self._peachyPrinters = []
         for dev in usb.core.find(find_all=True):
-            if (dev.idVendor == bootloader_idvendor) and (dev.idProduct == bootloader_idproduct):
+            if (dev.idVendor == self.bootloader_idvendor) and (dev.idProduct == self.bootloader_idproduct):
                 self._bootloaders.append(dev)
-            elif (dev.idVendor == peachy_idvendor) and (dev.idProduct == peachy_idproduct):
+            elif (dev.idVendor == self.peachy_idvendor) and (dev.idProduct == self.peachy_idproduct):
                 self._peachyPrinters.append(dev)
 
     def check_ready(self):
         self._list_usb_devices()
         num_bootloaders = len(self._bootloaders)
         num_peachyPrinters = len(self._peachyPrinters)
-        if (num_peachyPrinters) == 1) and (num_peachyPrinters) == 0):
+        if (num_peachyPrinters == 1) and (num_peachyPrinters == 0):
             return True
-        elif (num_peachyPrinters) == 0) and (num_peachyPrinters) <= 1):
+        elif (num_peachyPrinters == 0) and (num_peachyPrinters <= 1):
             return False
         else:
             if self._logger:
-                self._logger.error("{0} peachy printers and {1} bootloaders found".format(num_peachyPrinters, num_bootloaders)
+                self._logger.error("{0} peachy printers and {1} bootloaders found".format(num_peachyPrinters, num_bootloaders))
             raise Exception("{0} peachy printers and {1} bootloaders found".format(num_peachyPrinters, num_bootloaders))
 
     def update(self, firmware_path, complete_call_back=None):
@@ -43,17 +45,17 @@ class MacFirmwareUpdater(FirmwareUpdater):
 
     @property
     def dfu_bin(self):
-    	pass
+        pass
 
     def update(self, firmware_path, complete_call_back=None):
-        pass
+        raise NotImplementedError()
 
 
 class LinuxFirmwareUpdater(FirmwareUpdater):
 
     @property
     def dfu_bin(self):
-        return self.dfu_bin = os.path.join(self.dependancy_path, 'dfu-util')
+        return os.path.join(self.dependancy_path, 'dfu-util')
 
     def update(self, firmware_path, complete_call_back=None):
         if self._test_mode:
@@ -80,7 +82,7 @@ class WindowsFirmwareUpdater(FirmwareUpdater):
 
     @property
     def driver_bin(self):
-         return os.path.join(self.dependancy_path, 'wdi-simple.exe')
+        return os.path.join(self.dependancy_path, 'wdi-simple.exe')
 
     @property
     def dfu_bin(self):
@@ -98,7 +100,7 @@ class WindowsFirmwareUpdater(FirmwareUpdater):
             split_line = line.split(',')
             if (len(split_line) == 2) and ("RETURN" in split_line[0]):
                 driver_code = split_line[0].split(':')[1]
-		driver_code_message = split_line[1]
+        driver_code_message = split_line[1]
 
         if driver_code:
             self._logger.error("Driver Output: {0}".format(out))
@@ -109,7 +111,7 @@ class WindowsFirmwareUpdater(FirmwareUpdater):
         if self._test_mode:
             return True
         else:
-            driver_return=self.switch_driver()
+            driver_return = self.switch_driver()
             if driver_return == 0:
                 process = Popen([
                     self.dfu_bin,
@@ -130,18 +132,18 @@ class WindowsFirmwareUpdater(FirmwareUpdater):
                 raise Exception('Failed to switch driver')
 
 
-def get_firmware_updater(logger=None, peachy_printer_address='0483:df11'):
+def get_firmware_updater(logger=None, bootloader_idvendor=0x0483, bootloader_idproduct=0xdf11, peachy_idvendor=0x16d0, peachy_idproduct=0x0af3):
     path = os.path.dirname(os.path.abspath(__file__))
     dependancies_path = os.path.join(path, 'dependancies', 'windows')
     if 'win' in sys.platform:
         dependancies_path = os.path.join(path, 'dependancies', 'windows')
-        return WindowsFirmwareUpdater(logger, dependancies_path)
+        return WindowsFirmwareUpdater(dependancies_path, bootloader_idvendor, bootloader_idproduct, peachy_idvendor, peachy_idproduct, logger)
     elif 'linux' in sys.platform:
         dependancies_path = os.path.join(path, 'dependancies', 'linux')
-        return LinuxFirmwareUpdater(logger, dependancies_path)
+        return LinuxFirmwareUpdater(dependancies_path, bootloader_idvendor, bootloader_idproduct, peachy_idvendor, peachy_idproduct, logger)
     elif 'darwin' in sys.platform:
         dependancies_path = os.path.join(path, 'dependancies', 'mac')
-        return MacFirmwareUpdater(logger, dependancies_path)
+        return MacFirmwareUpdater(dependancies_path, bootloader_idvendor, bootloader_idproduct, peachy_idvendor, peachy_idproduct, logger)
     else:
         if logger:
             logger.error("Platform {} is unsupported for firmware updates".format(sys.platform))
