@@ -1,5 +1,6 @@
 import sys
 import os
+import stat
 import usb
 from subprocess import Popen, PIPE
 
@@ -57,6 +58,8 @@ class LinuxFirmwareUpdater(FirmwareUpdater):
     def dfu_bin(self):
         bin_file = os.path.join(self.dependancy_path, 'dfu-util')
         if os.path.isfile(bin_file):
+            st = os.stat(bin_file)
+            os.chmod(bin_file, st.st_mode | stat.S_IEXEC)
             return os.path.join(self.dependancy_path, 'dfu-util')
         else:
             if self._logger:
