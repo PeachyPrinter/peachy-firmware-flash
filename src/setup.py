@@ -11,7 +11,7 @@ setup(
     author="Peachy Printer",
     author_email="software+peachyprintertools@peachyprinter.com",
     package_data={'': ['*', 'firmware/dependancies/windows/*'],
-                  '': ['*', 'firmware/dependancies/mac/*'],
+                  # '': ['*', 'firmware/dependancies/mac/*'],
                   '': ['*', 'firmware/dependancies/linux/*'],
                   },
     install_requires=['pyusb==1.0.0b2'],
