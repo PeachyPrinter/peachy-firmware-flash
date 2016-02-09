@@ -101,7 +101,7 @@ class WindowsFirmwareUpdater(FirmwareUpdater):
             [self.driver_bin, '-b'],
             stdout=PIPE, stderr=PIPE)
         (out, err) = process.communicate()
-        exit_code = process.wait()
+        process.wait()
 
         returned_lines = out.split('\n')
         for line in returned_lines:
