@@ -3,6 +3,7 @@ import os
 from mock import patch, MagicMock
 import unittest
 from usb.core import Device
+from subprocess import PIPE
 
 # sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'src'))
@@ -127,5 +128,47 @@ class TestFirmwareUpdater(unittest.TestCase):
         mock_usb.find.assert_called_with(find_all=True)
 
 
+@patch('firmware.firmware.Popen')
+@patch('firmware.os.path.isfile')
+@patch('firmware.os.stat')
+@patch('firmware.os.chmod')
+class TestLinuxFirmwareUpdater(unittest.TestCase):
+    BOOTLOADER_IDVENDOR = 0x0483
+    BOOTLOADER_IDPRODUCT = 0xdf11
+    PEACHY_IDVENDOR = 0x16d0
+    PEACHY_IDPRODUCT = 0x0af3
+
+    def setUp(self):
+        self.bin_path = os.path.join('some','binary', 'path')
+        self.firmware_path = os.path.join('some', 'firmware', 'path.bin')
+
+    def test_check_ready_should_return_true_if_update_successfull(self, mock_chmod, mock_stat, mock_isfile, mock_Popen):
+        mock_isfile.return_value = True
+        mock_Popen.return_value.communicate.return_value = ('err', 'out')
+        mock_Popen.return_value.wait.return_value = 0
+        usb_addess = '{}:{}'.format('483', 'df11')
+        expected_command = [os.path.join(self.bin_path, 'dfu-util'), '-a','0','--dfuse-address', '0x08000000', '-D', self.firmware_path, '-d', usb_addess]
+
+        l_fw_up = LinuxFirmwareUpdater(self.bin_path, self.BOOTLOADER_IDVENDOR, self.BOOTLOADER_IDPRODUCT, self.PEACHY_IDVENDOR, self.PEACHY_IDPRODUCT)
+        result = l_fw_up.update(self.firmware_path)
+
+        self.assertTrue(result)
+        mock_Popen.assert_called_with(expected_command, stdout=PIPE, stderr=PIPE)
+        mock_Popen.return_value.wait.assert_called_with()
+
+    def test_check_ready_should_return_false_if_update_not_successfull(self, mock_chmod, mock_stat, mock_isfile, mock_Popen):
+        mock_isfile.return_value = True
+        mock_Popen.return_value.communicate.return_value = ('err', 'out')
+        mock_Popen.return_value.wait.return_value = 34
+        usb_addess = '{}:{}'.format('483', 'df11')
+        expected_command = [os.path.join(self.bin_path, 'dfu-util'), '-a','0','--dfuse-address', '0x08000000', '-D', self.firmware_path, '-d', usb_addess]
+
+        l_fw_up = LinuxFirmwareUpdater(self.bin_path, self.BOOTLOADER_IDVENDOR, self.BOOTLOADER_IDPRODUCT, self.PEACHY_IDVENDOR, self.PEACHY_IDPRODUCT)
+        result = l_fw_up.update(self.firmware_path)
+
+        self.assertFalse(result)
+        mock_Popen.assert_called_with(expected_command, stdout=PIPE, stderr=PIPE)
+        mock_Popen.return_value.wait.assert_called_with()
 if __name__ == '__main__':
     unittest.main()
+
