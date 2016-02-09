@@ -58,7 +58,7 @@ class TestFirmwareUpdater(unittest.TestCase):
         self.assertTrue(result)
         mock_usb.find.assert_called_with(find_all=True)
 
-    def test_check_ready_should_return_False_if_0_bootloader(self, mock_usb):
+    def test_check_ready_should_return_False_if_no_results(self, mock_usb):
         mock_usb.find.return_value = iter([])
 
         fw_up = FirmwareUpdater('somepath', self.BOOTLOADER_IDVENDOR, self.BOOTLOADER_IDPRODUCT, self.PEACHY_IDVENDOR, self.PEACHY_IDPRODUCT)
@@ -67,6 +67,63 @@ class TestFirmwareUpdater(unittest.TestCase):
         self.assertFalse(result)
         mock_usb.find.assert_called_with(find_all=True)
 
+    def test_check_ready_should_return_False_if_only_peachy_results(self, mock_usb):
+        mock_peachy = MagicMock()
+        mock_peachy.idVendor = self.PEACHY_IDVENDOR
+        mock_peachy.idProduct = self.PEACHY_IDPRODUCT
+        mock_usb.find.return_value = iter([mock_peachy])
+
+        fw_up = FirmwareUpdater('somepath', self.BOOTLOADER_IDVENDOR, self.BOOTLOADER_IDPRODUCT, self.PEACHY_IDVENDOR, self.PEACHY_IDPRODUCT)
+        result = fw_up.check_ready()
+
+        self.assertFalse(result)
+        mock_usb.find.assert_called_with(find_all=True)
+
+    def test_check_ready_should_raise_exception_if_peachy_and_bootloader(self, mock_usb):
+        mock_peachy = MagicMock()
+        mock_peachy.idVendor = self.PEACHY_IDVENDOR
+        mock_peachy.idProduct = self.PEACHY_IDPRODUCT
+        mock_bootloader = MagicMock()
+        mock_bootloader.idVendor = self.BOOTLOADER_IDVENDOR
+        mock_bootloader.idProduct = self.BOOTLOADER_IDPRODUCT
+        mock_usb.find.return_value = iter([mock_peachy, mock_bootloader])
+
+        fw_up = FirmwareUpdater('somepath', self.BOOTLOADER_IDVENDOR, self.BOOTLOADER_IDPRODUCT, self.PEACHY_IDVENDOR, self.PEACHY_IDPRODUCT)
+        with self.assertRaises(Exception):
+            fw_up.check_ready()
+
+        mock_usb.find.assert_called_with(find_all=True)
+
+    def test_check_ready_should_raise_exception_if_multipule_peachys(self, mock_usb):
+        mock_peachy1 = MagicMock()
+        mock_peachy1.idVendor = self.PEACHY_IDVENDOR
+        mock_peachy1.idProduct = self.PEACHY_IDPRODUCT
+        mock_peachy2 = MagicMock()
+        mock_peachy2.idVendor = self.PEACHY_IDVENDOR
+        mock_peachy2.idProduct = self.PEACHY_IDPRODUCT
+        mock_usb.find.return_value = iter([mock_peachy1, mock_peachy2])
+
+        fw_up = FirmwareUpdater('somepath', self.BOOTLOADER_IDVENDOR, self.BOOTLOADER_IDPRODUCT, self.PEACHY_IDVENDOR, self.PEACHY_IDPRODUCT)
+        with self.assertRaises(Exception):
+            fw_up.check_ready()
+
+        mock_usb.find.assert_called_with(find_all=True)
+
+    def test_check_ready_should_raise_exception_if_multipule_bootloaders(self, mock_usb):
+        mock_bootloader1 = MagicMock()
+        mock_bootloader1.idVendor = self.BOOTLOADER_IDVENDOR
+        mock_bootloader1.idProduct = self.BOOTLOADER_IDPRODUCT
+        mock_bootloader2 = MagicMock()
+        mock_bootloader2.idVendor = self.BOOTLOADER_IDVENDOR
+        mock_bootloader2.idProduct = self.BOOTLOADER_IDPRODUCT
+
+        mock_usb.find.return_value = iter([mock_bootloader1, mock_bootloader2])
+
+        fw_up = FirmwareUpdater('somepath', self.BOOTLOADER_IDVENDOR, self.BOOTLOADER_IDPRODUCT, self.PEACHY_IDVENDOR, self.PEACHY_IDPRODUCT)
+        with self.assertRaises(Exception):
+            fw_up.check_ready()
+
+        mock_usb.find.assert_called_with(find_all=True)
 
 
 if __name__ == '__main__':
