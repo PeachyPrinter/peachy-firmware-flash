@@ -1,6 +1,6 @@
 from setuptools import setup
 from setuptools.command.install import install as _Install
-from firmware.VERSION import version
+from VERSION import version
 
 setup(
     name='PeachyPrinterFirmwareAPI',
@@ -11,8 +11,8 @@ setup(
     author="Peachy Printer",
     author_email="software+peachyprintertools@peachyprinter.com",
     install_requires=['pyusb==1.0.0b2'],
-    packages=['firmware'],
-    py_modules=[],
+    packages=['firmware', ],
+    py_modules=['VERSION'],
     include_package_data=True
       )
 

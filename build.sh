@@ -59,6 +59,7 @@ echo "# THIS IS A GENERATED FILE " > version.properties
 echo "version='$VERSION'" >> version.properties
 echo "revision='$GIT_REV'" >> version.properties
 echo "Git Revision Number is $GIT_REV_COUNT"
+cp version.properties src/VERSION.py
 cp version.properties src/firmware/VERSION.py
 
 python -m pip install pyusb==1.0.0b2
@@ -76,7 +77,12 @@ if [ $? != 0 ]; then
     exit 56
 fi
 cd ..
-
+pip install src/dist/PeachyPrinterFirmwareAPI-$VERSION.tar.gz
+if [ $? != 0 ]; then
+    echo "package install fails"
+    cd ..
+    exit 56
+fi
 
 echo "PACKAGING COMPLETE SUCCESS"
 
