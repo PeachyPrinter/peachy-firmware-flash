@@ -39,6 +39,7 @@ class TestFirmwareInit(unittest.TestCase):
         with self.assertRaises(Exception):
             firmware.get_firmware_updater()
 
+
 @patch('firmware.firmware.usbcore')
 class TestFirmwareUpdater(unittest.TestCase):
     BOOTLOADER_IDVENDOR = 0x0483
@@ -128,4 +129,3 @@ class TestFirmwareUpdater(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-
