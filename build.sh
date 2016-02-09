@@ -69,6 +69,8 @@ echo "Running Tests"
 echo `python2.7 --version`
 echo "------------------------------------"
 
+cp README.md src/README.txt
+
 cd src
 python setup.py sdist
 if [ $? != 0 ]; then
@@ -77,7 +79,7 @@ if [ $? != 0 ]; then
     exit 56
 fi
 cd ..
-pip install src/dist/PeachyPrinterFirmwareAPI-$VERSION.tar.gz
+python -m pip install src/dist/PeachyPrinterFirmwareAPI-$VERSION.tar.gz
 if [ $? != 0 ]; then
     echo "package install fails"
     cd ..

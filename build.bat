@@ -60,7 +60,9 @@ echo revision='%GIT_REV%' >> version.properties
 echo Git Revision Number is %GIT_REV_COUNT%
 copy version.properties src\firmware\VERSION.py
 
+copy README.md src/README.txt
 cd src
+
 
 echo ------------------------------------
 echo Create Peachy Tools Api
@@ -73,6 +75,7 @@ IF NOT "%ERRORLEVEL%" == "0" (
     EXIT /B 4
 )
 
+
 python setup.py sdist
 IF NOT "%ERRORLEVEL%" == "0" (
     echo "FAILED PACKAGING ABORTING"
@@ -81,6 +84,12 @@ IF NOT "%ERRORLEVEL%" == "0" (
 )
 cd ..
 
+python -m pip install src/dist/PeachyPrinterFirmwareAPI-%VERSION%.zip
+IF NOT "%ERRORLEVEL%" == "0" (
+    echo "FAILED PACKAGING INSTALL ABORTING"
+    cd ..
+    EXIT /B 3
+)
 
 echo ------------------------------------
 echo Running Tests
