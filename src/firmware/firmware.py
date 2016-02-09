@@ -1,7 +1,7 @@
 import sys
 import os
 import stat
-import usb
+from usb import core as usbcore
 from subprocess import Popen, PIPE
 
 
@@ -19,7 +19,7 @@ class FirmwareUpdater(object):
     def _list_usb_devices(self):
         self._bootloaders = []
         self._peachyPrinters = []
-        for dev in usb.core.find(find_all=True):
+        for dev in usbcore.find(find_all=True):
             if (dev.idVendor == self._bootloader_idvendor) and (dev.idProduct == self._bootloader_idproduct):
                 self._bootloaders.append(dev)
             elif (dev.idVendor == self._peachy_idvendor) and (dev.idProduct == self._peachy_idproduct):
