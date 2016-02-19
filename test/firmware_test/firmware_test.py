@@ -2,7 +2,6 @@ import sys
 import os
 from mock import patch, MagicMock
 import unittest
-from usb.core import Device
 from subprocess import PIPE
 
 # sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))

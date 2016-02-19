@@ -2,7 +2,6 @@ import sys
 import os
 import stat
 from subprocess import Popen, PIPE
-import time
 
 
 class FirmwareUpdater(object):
@@ -23,16 +22,24 @@ class FirmwareUpdater(object):
     def peachy_usb_address(self):
         return "{0:04x}:{1:04x}".format(self._peachy_idvendor, self._peachy_idproduct)
 
-    def list_usb_devices(self):
+    @property
+    def check_usb_command(self):
         raise NotImplementedError()
-        # bootloaders = []
-        # peachy_printers = []
-        # for dev in usbcore.find(find_all=True):
-        #     if (dev.idVendor == self._bootloader_idvendor) and (dev.idProduct == self._bootloader_idproduct):
-        #         bootloaders.append(dev)
-        #     elif (dev.idVendor == self._peachy_idvendor) and (dev.idProduct == self._peachy_idproduct):
-        #         peachy_printers.append(dev)
-        # return (bootloaders, peachy_printers)
+
+    def list_usb_devices(self):
+        process = Popen(self.check_usb_command, stdout=PIPE, stderr=PIPE)
+        (out, err) = process.communicate()
+        exit_code = process.wait()
+        if exit_code != 0:
+            if self._logger:
+                self._logger.error("Output: {}".format(out))
+                self._logger.error("Error: {}".format(err))
+                self._logger.error("Exit Code: {}".format(exit_code))
+            raise Exception("Command failed")
+        else:
+            peachys = out.count(self.peachy_usb_address)
+            bootloaders = out.count(self.bootloader_usb_address)
+            return (bootloaders, peachys)
 
     def check_ready(self):
         bootloaders, peachy_printers = self.list_usb_devices()
@@ -49,32 +56,12 @@ class FirmwareUpdater(object):
         raise NotImplementedError()
 
 
-class MacFirmwareUpdater(FirmwareUpdater):
-
-    @property
-    def dfu_bin(self):
-        pass
-
-    def update(self, firmware_path):
-        raise NotImplementedError()
-
-
 class LinuxFirmwareUpdater(FirmwareUpdater):
 
-    def list_usb_devices(self):
-        process = Popen(['lsusb'], stdout=PIPE, stderr=PIPE)
-        (out, err) = process.communicate()
-        exit_code = process.wait()
-        if exit_code != 0:
-            if self._logger:
-                self._logger.error("Output: {}".format(out))
-                self._logger.error("Error: {}".format(err))
-                self._logger.error("Exit Code: {}".format(exit_code))
-            raise Exception("Command failed")
-        else:
-            peachys = out.count(self.peachy_usb_address)
-            bootloaders = out.count(self.bootloader_usb_address)
-            return (bootloaders, peachys)
+    @property
+    def check_usb_command(self):
+        return ['lsusb']
+
 
     @property
     def dfu_bin(self):
@@ -107,6 +94,22 @@ class LinuxFirmwareUpdater(FirmwareUpdater):
             else:
                 return True
 
+class MacFirmwareUpdater(LinuxFirmwareUpdater):
+
+    @property
+    def bootloader_usb_address(self):
+        return "0x{0:04x}:0x{1:04x}".format(self._bootloader_idvendor, self._bootloader_idproduct)
+
+    @property
+    def peachy_usb_address(self):
+        return "0x{0:04x}:0x{1:04x}".format(self._peachy_idvendor, self._peachy_idproduct)
+
+    @property
+    def check_usb_command(self):
+        command = [os.path.join(self.dependancy_path, 'check_usb.sh')]
+        print command
+        return [os.path.join(self.dependancy_path, 'check_usb.sh')]
+
 
 class WindowsFirmwareUpdater(FirmwareUpdater):
 
@@ -118,21 +121,9 @@ class WindowsFirmwareUpdater(FirmwareUpdater):
     def peachy_usb_address(self):
         return '"USB\\VID_{0:04X}&PID_{1:04X}"'.format(self._peachy_idvendor, self._peachy_idproduct)
 
-    def list_usb_devices(self):
-        command = '''wmic.exe path WIN32_PnPEntity where "DeviceID like 'USB\\\\VID_%'" get HardwareID'''
-        process = Popen(command, stdout=PIPE, stderr=PIPE)
-        (out, err) = process.communicate()
-        exit_code = process.wait()
-        if exit_code != 0:
-            if self._logger:
-                self._logger.error("Output: {}".format(out))
-                self._logger.error("Error: {}".format(err))
-                self._logger.error("Exit Code: {}".format(exit_code))
-            raise Exception("Command failed")
-        else:
-            peachys = out.count(self.peachy_usb_address)
-            bootloaders = out.count(self.bootloader_usb_address)
-            return (bootloaders, peachys)
+    @property
+    def check_usb_command(self):
+        return '''wmic.exe path WIN32_PnPEntity where "DeviceID like 'USB\\\\VID_%'" get HardwareID'''
 
     @property
     def driver_bin(self):
@@ -187,16 +178,15 @@ class WindowsFirmwareUpdater(FirmwareUpdater):
 
 def get_firmware_updater(logger=None, bootloader_idvendor=0x0483, bootloader_idproduct=0xdf11, peachy_idvendor=0x16d0, peachy_idproduct=0x0af3):
     path = os.path.dirname(os.path.abspath(__file__))
-    dependancies_path = os.path.join(path, 'dependancies', 'windows')
-    if 'win' in sys.platform:
+    if 'darwin' in sys.platform:
+        dependancies_path = os.path.join(path, 'dependancies', 'mac')
+        return MacFirmwareUpdater(dependancies_path, bootloader_idvendor, bootloader_idproduct, peachy_idvendor, peachy_idproduct, logger)
+    elif 'win' in sys.platform:
         dependancies_path = os.path.join(path, 'dependancies', 'windows')
         return WindowsFirmwareUpdater(dependancies_path, bootloader_idvendor, bootloader_idproduct, peachy_idvendor, peachy_idproduct, logger)
     elif 'linux' in sys.platform:
         dependancies_path = os.path.join(path, 'dependancies', 'linux')
         return LinuxFirmwareUpdater(dependancies_path, bootloader_idvendor, bootloader_idproduct, peachy_idvendor, peachy_idproduct, logger)
-    elif 'darwin' in sys.platform:
-        dependancies_path = os.path.join(path, 'dependancies', 'mac')
-        return MacFirmwareUpdater(dependancies_path, bootloader_idvendor, bootloader_idproduct, peachy_idvendor, peachy_idproduct, logger)
     else:
         if logger:
             logger.error("Platform {} is unsupported for firmware updates".format(sys.platform))
