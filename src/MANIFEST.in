@@ -1,2 +1,3 @@
 include firmware/dependancies/windows/*
 include firmware/dependancies/linux/*
+include firmware/dependancies/mac/*

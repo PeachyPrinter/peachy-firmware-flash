@@ -10,7 +10,7 @@ setup(
     url="http://www.peachyprinter.com",
     author="Peachy Printer",
     author_email="software+peachyprintertools@peachyprinter.com",
-    install_requires=['pyusb==1.0.0b2'],
+    install_requires=[],
     packages=['firmware', ],
     py_modules=['VERSION'],
     include_package_data=True

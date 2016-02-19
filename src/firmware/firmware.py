@@ -1,7 +1,6 @@
 import sys
 import os
 import stat
-from usb import core as usbcore
 from subprocess import Popen, PIPE
 
 
@@ -14,29 +13,30 @@ class FirmwareUpdater(object):
         self._logger = logger
 
         self.dependancy_path = dependancy_path
-        self.usb_address = "{0:x}:{1:x}".format(bootloader_idvendor, bootloader_idproduct)
+        self.bootloader_usb_address = "{0:04x}:{1:04x}".format(bootloader_idvendor, bootloader_idproduct)
+        self.peachy_usb_address = "{0:04x}:{1:04x}".format(peachy_idvendor, peachy_idproduct)
 
-    def _list_usb_devices(self):
-        self._bootloaders = []
-        self._peachyPrinters = []
-        for dev in usbcore.find(find_all=True):
-            if (dev.idVendor == self._bootloader_idvendor) and (dev.idProduct == self._bootloader_idproduct):
-                self._bootloaders.append(dev)
-            elif (dev.idVendor == self._peachy_idvendor) and (dev.idProduct == self._peachy_idproduct):
-                self._peachyPrinters.append(dev)
+    def list_usb_devices(self):
+        raise NotImplementedError()
+        # bootloaders = []
+        # peachy_printers = []
+        # for dev in usbcore.find(find_all=True):
+        #     if (dev.idVendor == self._bootloader_idvendor) and (dev.idProduct == self._bootloader_idproduct):
+        #         bootloaders.append(dev)
+        #     elif (dev.idVendor == self._peachy_idvendor) and (dev.idProduct == self._peachy_idproduct):
+        #         peachy_printers.append(dev)
+        # return (bootloaders, peachy_printers)
 
     def check_ready(self):
-        self._list_usb_devices()
-        num_bootloaders = len(self._bootloaders)
-        num_peachyPrinters = len(self._peachyPrinters)
-        if (num_bootloaders == 1) and (num_peachyPrinters == 0):
+        bootloaders, peachy_printers = self.list_usb_devices()
+        if (bootloaders == 1) and (peachy_printers == 0):
             return True
-        elif (num_bootloaders == 0) and (num_peachyPrinters <= 1):
+        elif (bootloaders == 0) and (peachy_printers <= 1):
             return False
         else:
             if self._logger:
-                self._logger.error("{0} peachy printers and {1} bootloaders found".format(num_peachyPrinters, num_bootloaders))
-            raise Exception("{0} peachy printers and {1} bootloaders found".format(num_peachyPrinters, num_bootloaders))
+                self._logger.error("{0} peachy printers and {1} bootloaders found".format(peachy_printers, bootloaders))
+            raise Exception("{0} peachy printers and {1} bootloaders found".format(peachy_printers, bootloaders))
 
     def update(self, firmware_path):
         raise NotImplementedError()
@@ -53,6 +53,25 @@ class MacFirmwareUpdater(FirmwareUpdater):
 
 
 class LinuxFirmwareUpdater(FirmwareUpdater):
+
+    def list_usb_devices(self):
+        process = Popen(['lsusb'], stdout=PIPE, stderr=PIPE)
+        (out, err) = process.communicate()
+        exit_code = process.wait()
+        if exit_code != 0:
+            if self._logger:
+                self._logger.error("Output: {}".format(out))
+                self._logger.error("Error: {}".format(err))
+                self._logger.error("Exit Code: {}".format(exit_code))
+            raise Exception("Command failed")
+        else:
+            print out
+            print self.peachy_usb_address
+            print self.bootloader_usb_address
+            peachys = out.count(self.peachy_usb_address)
+            bootloaders = out.count(self.bootloader_usb_address)
+            print "{} -- {}".format(bootloaders, peachys)
+            return (bootloaders, peachys)
 
     @property
     def dfu_bin(self):
@@ -72,7 +91,7 @@ class LinuxFirmwareUpdater(FirmwareUpdater):
                 '-a', '0',
                 '--dfuse-address', '0x08000000',
                 '-D', firmware_path,
-                '-d', self.usb_address
+                '-d', self.bootloader_usb_address
             ], stdout=PIPE, stderr=PIPE)
             (out, err) = process.communicate()
             exit_code = process.wait()
@@ -87,7 +106,7 @@ class LinuxFirmwareUpdater(FirmwareUpdater):
 
 
 class WindowsFirmwareUpdater(FirmwareUpdater):
-
+    # wmic path WIN32_PnPEntity where "DeviceID like 'USB\\VID_16D0%'"
     @property
     def driver_bin(self):
         return os.path.join(self.dependancy_path, 'wdi-simple.exe')
@@ -123,7 +142,7 @@ class WindowsFirmwareUpdater(FirmwareUpdater):
                 '-a', '0',
                 '--dfuse-address', '0x08000000',
                 '-D', firmware_path,
-                '-d', self.usb_address
+                '-d', self.bootloader_usb_address
                 ], stdout=PIPE, stderr=PIPE)
             (out, err) = process.communicate()
             exit_code = process.wait()

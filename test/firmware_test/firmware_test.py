@@ -40,94 +40,6 @@ class TestFirmwareInit(unittest.TestCase):
         with self.assertRaises(Exception):
             firmware.get_firmware_updater()
 
-
-@patch('firmware.firmware.usbcore')
-class TestFirmwareUpdater(unittest.TestCase):
-    BOOTLOADER_IDVENDOR = 0x0483
-    BOOTLOADER_IDPRODUCT = 0xdf11
-    PEACHY_IDVENDOR = 0x16d0
-    PEACHY_IDPRODUCT = 0x0af3
-
-    def test_check_ready_should_return_true_if_1_bootloader(self, mock_usb):
-        mock_bootloader_device = MagicMock()
-        mock_bootloader_device.idVendor = self.BOOTLOADER_IDVENDOR
-        mock_bootloader_device.idProduct = self.BOOTLOADER_IDPRODUCT
-        mock_usb.find.return_value = iter([mock_bootloader_device])
-
-        fw_up = FirmwareUpdater('somepath', self.BOOTLOADER_IDVENDOR, self.BOOTLOADER_IDPRODUCT, self.PEACHY_IDVENDOR, self.PEACHY_IDPRODUCT)
-        result = fw_up.check_ready()
-
-        self.assertTrue(result)
-        mock_usb.find.assert_called_with(find_all=True)
-
-    def test_check_ready_should_return_False_if_no_results(self, mock_usb):
-        mock_usb.find.return_value = iter([])
-
-        fw_up = FirmwareUpdater('somepath', self.BOOTLOADER_IDVENDOR, self.BOOTLOADER_IDPRODUCT, self.PEACHY_IDVENDOR, self.PEACHY_IDPRODUCT)
-        result = fw_up.check_ready()
-
-        self.assertFalse(result)
-        mock_usb.find.assert_called_with(find_all=True)
-
-    def test_check_ready_should_return_False_if_only_peachy_results(self, mock_usb):
-        mock_peachy = MagicMock()
-        mock_peachy.idVendor = self.PEACHY_IDVENDOR
-        mock_peachy.idProduct = self.PEACHY_IDPRODUCT
-        mock_usb.find.return_value = iter([mock_peachy])
-
-        fw_up = FirmwareUpdater('somepath', self.BOOTLOADER_IDVENDOR, self.BOOTLOADER_IDPRODUCT, self.PEACHY_IDVENDOR, self.PEACHY_IDPRODUCT)
-        result = fw_up.check_ready()
-
-        self.assertFalse(result)
-        mock_usb.find.assert_called_with(find_all=True)
-
-    def test_check_ready_should_raise_exception_if_peachy_and_bootloader(self, mock_usb):
-        mock_peachy = MagicMock()
-        mock_peachy.idVendor = self.PEACHY_IDVENDOR
-        mock_peachy.idProduct = self.PEACHY_IDPRODUCT
-        mock_bootloader = MagicMock()
-        mock_bootloader.idVendor = self.BOOTLOADER_IDVENDOR
-        mock_bootloader.idProduct = self.BOOTLOADER_IDPRODUCT
-        mock_usb.find.return_value = iter([mock_peachy, mock_bootloader])
-
-        fw_up = FirmwareUpdater('somepath', self.BOOTLOADER_IDVENDOR, self.BOOTLOADER_IDPRODUCT, self.PEACHY_IDVENDOR, self.PEACHY_IDPRODUCT)
-        with self.assertRaises(Exception):
-            fw_up.check_ready()
-
-        mock_usb.find.assert_called_with(find_all=True)
-
-    def test_check_ready_should_raise_exception_if_multipule_peachys(self, mock_usb):
-        mock_peachy1 = MagicMock()
-        mock_peachy1.idVendor = self.PEACHY_IDVENDOR
-        mock_peachy1.idProduct = self.PEACHY_IDPRODUCT
-        mock_peachy2 = MagicMock()
-        mock_peachy2.idVendor = self.PEACHY_IDVENDOR
-        mock_peachy2.idProduct = self.PEACHY_IDPRODUCT
-        mock_usb.find.return_value = iter([mock_peachy1, mock_peachy2])
-
-        fw_up = FirmwareUpdater('somepath', self.BOOTLOADER_IDVENDOR, self.BOOTLOADER_IDPRODUCT, self.PEACHY_IDVENDOR, self.PEACHY_IDPRODUCT)
-        with self.assertRaises(Exception):
-            fw_up.check_ready()
-
-        mock_usb.find.assert_called_with(find_all=True)
-
-    def test_check_ready_should_raise_exception_if_multipule_bootloaders(self, mock_usb):
-        mock_bootloader1 = MagicMock()
-        mock_bootloader1.idVendor = self.BOOTLOADER_IDVENDOR
-        mock_bootloader1.idProduct = self.BOOTLOADER_IDPRODUCT
-        mock_bootloader2 = MagicMock()
-        mock_bootloader2.idVendor = self.BOOTLOADER_IDVENDOR
-        mock_bootloader2.idProduct = self.BOOTLOADER_IDPRODUCT
-
-        mock_usb.find.return_value = iter([mock_bootloader1, mock_bootloader2])
-
-        fw_up = FirmwareUpdater('somepath', self.BOOTLOADER_IDVENDOR, self.BOOTLOADER_IDPRODUCT, self.PEACHY_IDVENDOR, self.PEACHY_IDPRODUCT)
-        with self.assertRaises(Exception):
-            fw_up.check_ready()
-
-        mock_usb.find.assert_called_with(find_all=True)
-
-
 @patch('firmware.firmware.Popen')
 @patch('firmware.os.path.isfile')
 @patch('firmware.os.stat')
@@ -142,12 +54,12 @@ class TestLinuxFirmwareUpdater(unittest.TestCase):
         self.bin_path = os.path.join('some','binary', 'path')
         self.firmware_path = os.path.join('some', 'firmware', 'path.bin')
 
-    def test_check_ready_should_return_true_if_update_successfull(self, mock_chmod, mock_stat, mock_isfile, mock_Popen):
+    def test_update_should_return_true_if_update_successfull(self, mock_chmod, mock_stat, mock_isfile, mock_Popen):
         mock_isfile.return_value = True
         mock_Popen.return_value.communicate.return_value = ('err', 'out')
         mock_Popen.return_value.wait.return_value = 0
-        usb_addess = '{}:{}'.format('483', 'df11')
-        expected_command = [os.path.join(self.bin_path, 'dfu-util'), '-a','0','--dfuse-address', '0x08000000', '-D', self.firmware_path, '-d', usb_addess]
+        usb_addess = '{}:{}'.format('0483', 'df11')
+        expected_command = [os.path.join(self.bin_path, 'dfu-util'), '-a', '0', '--dfuse-address', '0x08000000', '-D', self.firmware_path, '-d', usb_addess]
 
         l_fw_up = LinuxFirmwareUpdater(self.bin_path, self.BOOTLOADER_IDVENDOR, self.BOOTLOADER_IDPRODUCT, self.PEACHY_IDVENDOR, self.PEACHY_IDPRODUCT)
         result = l_fw_up.update(self.firmware_path)
@@ -156,12 +68,12 @@ class TestLinuxFirmwareUpdater(unittest.TestCase):
         mock_Popen.assert_called_with(expected_command, stdout=PIPE, stderr=PIPE)
         mock_Popen.return_value.wait.assert_called_with()
 
-    def test_check_ready_should_return_false_if_update_not_successfull(self, mock_chmod, mock_stat, mock_isfile, mock_Popen):
+    def test_update_should_return_false_if_update_not_successfull(self, mock_chmod, mock_stat, mock_isfile, mock_Popen):
         mock_isfile.return_value = True
         mock_Popen.return_value.communicate.return_value = ('err', 'out')
         mock_Popen.return_value.wait.return_value = 34
-        usb_addess = '{}:{}'.format('483', 'df11')
-        expected_command = [os.path.join(self.bin_path, 'dfu-util'), '-a','0','--dfuse-address', '0x08000000', '-D', self.firmware_path, '-d', usb_addess]
+        usb_addess = '{}:{}'.format('0483', 'df11')
+        expected_command = [os.path.join(self.bin_path, 'dfu-util'), '-a', '0', '--dfuse-address', '0x08000000', '-D', self.firmware_path, '-d', usb_addess]
 
         l_fw_up = LinuxFirmwareUpdater(self.bin_path, self.BOOTLOADER_IDVENDOR, self.BOOTLOADER_IDPRODUCT, self.PEACHY_IDVENDOR, self.PEACHY_IDPRODUCT)
         result = l_fw_up.update(self.firmware_path)
@@ -169,6 +81,69 @@ class TestLinuxFirmwareUpdater(unittest.TestCase):
         self.assertFalse(result)
         mock_Popen.assert_called_with(expected_command, stdout=PIPE, stderr=PIPE)
         mock_Popen.return_value.wait.assert_called_with()
+
+    def test_check_ready_should_return_true_if_1_bootloader(self, mock_chmod, mock_stat, mock_isfile, mock_Popen):
+
+        mock_Popen.return_value.communicate.return_value = ('{:04x}:{:04x}'.format(self.BOOTLOADER_IDVENDOR, self.BOOTLOADER_IDPRODUCT), '')
+        mock_Popen.return_value.wait.return_value = 0
+
+        fw_up = LinuxFirmwareUpdater('somepath', self.BOOTLOADER_IDVENDOR, self.BOOTLOADER_IDPRODUCT, self.PEACHY_IDVENDOR, self.PEACHY_IDPRODUCT)
+        result = fw_up.check_ready()
+
+        self.assertTrue(result)
+        mock_Popen.assert_called_with(['lsusb'], stdout=PIPE, stderr=PIPE)
+
+    def test_check_ready_should_return_False_if_no_results(self, mock_chmod, mock_stat, mock_isfile, mock_Popen):
+        mock_Popen.return_value.communicate.return_value = ('', '')
+        mock_Popen.return_value.wait.return_value = 0
+
+        fw_up = LinuxFirmwareUpdater('somepath', self.BOOTLOADER_IDVENDOR, self.BOOTLOADER_IDPRODUCT, self.PEACHY_IDVENDOR, self.PEACHY_IDPRODUCT)
+        result = fw_up.check_ready()
+
+        self.assertFalse(result)
+        mock_Popen.assert_called_with(['lsusb'], stdout=PIPE, stderr=PIPE)
+
+    def test_check_ready_should_return_False_if_only_peachy_results(self, mock_chmod, mock_stat, mock_isfile, mock_Popen):
+        mock_Popen.return_value.communicate.return_value = ('{:04x}:{:04x}'.format(self.PEACHY_IDVENDOR, self.PEACHY_IDPRODUCT), '')
+        mock_Popen.return_value.wait.return_value = 0
+
+        fw_up = LinuxFirmwareUpdater('somepath', self.BOOTLOADER_IDVENDOR, self.BOOTLOADER_IDPRODUCT, self.PEACHY_IDVENDOR, self.PEACHY_IDPRODUCT)
+        result = fw_up.check_ready()
+
+        self.assertFalse(result)
+        mock_Popen.assert_called_with(['lsusb'], stdout=PIPE, stderr=PIPE)
+
+    def test_check_ready_should_raise_exception_if_peachy_and_bootloader(self, mock_chmod, mock_stat, mock_isfile, mock_Popen):
+        mock_Popen.return_value.communicate.return_value = ('{:04x}:{:04x}\n{:04x}:{:04x}'.format(self.PEACHY_IDVENDOR, self.PEACHY_IDPRODUCT, self.BOOTLOADER_IDVENDOR, self.BOOTLOADER_IDPRODUCT), '')
+        mock_Popen.return_value.wait.return_value = 0
+
+        fw_up = LinuxFirmwareUpdater('somepath', self.BOOTLOADER_IDVENDOR, self.BOOTLOADER_IDPRODUCT, self.PEACHY_IDVENDOR, self.PEACHY_IDPRODUCT)
+
+        with self.assertRaises(Exception):
+            fw_up.check_ready()
+
+        mock_Popen.assert_called_with(['lsusb'], stdout=PIPE, stderr=PIPE)
+
+    def test_check_ready_should_raise_exception_if_multipule_peachys(self, mock_chmod, mock_stat, mock_isfile, mock_Popen):
+        mock_Popen.return_value.communicate.return_value = ('{0:04x}:{1:04x}\n{0:04x}:{1:04x}'.format(self.PEACHY_IDVENDOR, self.PEACHY_IDPRODUCT), '')
+        mock_Popen.return_value.wait.return_value = 0
+
+        fw_up = LinuxFirmwareUpdater('somepath', self.BOOTLOADER_IDVENDOR, self.BOOTLOADER_IDPRODUCT, self.PEACHY_IDVENDOR, self.PEACHY_IDPRODUCT)
+        with self.assertRaises(Exception):
+            fw_up.check_ready()
+
+        mock_Popen.assert_called_with(['lsusb'], stdout=PIPE, stderr=PIPE)
+
+    def test_check_ready_should_raise_exception_if_multipule_bootloaders(self, mock_chmod, mock_stat, mock_isfile, mock_Popen):
+        mock_Popen.return_value.communicate.return_value = ('{0:04x}:{1:04x}\n{0:04x}:{1:04x}'.format(self.BOOTLOADER_IDVENDOR, self.BOOTLOADER_IDPRODUCT), '')
+        mock_Popen.return_value.wait.return_value = 0
+
+        fw_up = LinuxFirmwareUpdater('somepath', self.BOOTLOADER_IDVENDOR, self.BOOTLOADER_IDPRODUCT, self.PEACHY_IDVENDOR, self.PEACHY_IDPRODUCT)
+        with self.assertRaises(Exception):
+            fw_up.check_ready()
+
+        mock_Popen.assert_called_with(['lsusb'], stdout=PIPE, stderr=PIPE)
+
+
 if __name__ == '__main__':
     unittest.main()
-
