@@ -2,6 +2,7 @@ import sys
 import os
 import stat
 from subprocess import Popen, PIPE
+import time
 
 
 class FirmwareUpdater(object):
@@ -13,8 +14,14 @@ class FirmwareUpdater(object):
         self._logger = logger
 
         self.dependancy_path = dependancy_path
-        self.bootloader_usb_address = "{0:04x}:{1:04x}".format(bootloader_idvendor, bootloader_idproduct)
-        self.peachy_usb_address = "{0:04x}:{1:04x}".format(peachy_idvendor, peachy_idproduct)
+
+    @property
+    def bootloader_usb_address(self):
+        return "{0:04x}:{1:04x}".format(self._bootloader_idvendor, self._bootloader_idproduct)
+
+    @property
+    def peachy_usb_address(self):
+        return "{0:04x}:{1:04x}".format(self._peachy_idvendor, self._peachy_idproduct)
 
     def list_usb_devices(self):
         raise NotImplementedError()
@@ -65,12 +72,8 @@ class LinuxFirmwareUpdater(FirmwareUpdater):
                 self._logger.error("Exit Code: {}".format(exit_code))
             raise Exception("Command failed")
         else:
-            print out
-            print self.peachy_usb_address
-            print self.bootloader_usb_address
             peachys = out.count(self.peachy_usb_address)
             bootloaders = out.count(self.bootloader_usb_address)
-            print "{} -- {}".format(bootloaders, peachys)
             return (bootloaders, peachys)
 
     @property
@@ -106,7 +109,31 @@ class LinuxFirmwareUpdater(FirmwareUpdater):
 
 
 class WindowsFirmwareUpdater(FirmwareUpdater):
-    # wmic path WIN32_PnPEntity where "DeviceID like 'USB\\VID_16D0%'"
+
+    @property
+    def bootloader_usb_address(self):
+        return '"USB\\VID_{0:04X}&PID_{1:04X}"'.format(self._bootloader_idvendor, self._bootloader_idproduct)
+
+    @property
+    def peachy_usb_address(self):
+        return '"USB\\VID_{0:04X}&PID_{1:04X}"'.format(self._peachy_idvendor, self._peachy_idproduct)
+
+    def list_usb_devices(self):
+        command = '''wmic.exe path WIN32_PnPEntity where "DeviceID like 'USB\\\\VID_%'" get HardwareID'''
+        process = Popen(command, stdout=PIPE, stderr=PIPE)
+        (out, err) = process.communicate()
+        exit_code = process.wait()
+        if exit_code != 0:
+            if self._logger:
+                self._logger.error("Output: {}".format(out))
+                self._logger.error("Error: {}".format(err))
+                self._logger.error("Exit Code: {}".format(exit_code))
+            raise Exception("Command failed")
+        else:
+            peachys = out.count(self.peachy_usb_address)
+            bootloaders = out.count(self.bootloader_usb_address)
+            return (bootloaders, peachys)
+
     @property
     def driver_bin(self):
         return os.path.join(self.dependancy_path, 'wdi-simple.exe')
@@ -124,7 +151,7 @@ class WindowsFirmwareUpdater(FirmwareUpdater):
 
         returned_lines = out.split('\n')
         for line in returned_lines:
-            split_line = line.split(',')
+            split_line = line.split(', ')
             if (len(split_line) == 2) and ("RETURN" in split_line[0]):
                 driver_code = split_line[0].split(':')[1]
         driver_code_message = split_line[1]

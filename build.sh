@@ -62,8 +62,6 @@ echo "Git Revision Number is $GIT_REV_COUNT"
 cp version.properties src/VERSION.py
 cp version.properties src/firmware/VERSION.py
 
-python -m pip install pyusb==1.0.0b2
-
 echo "------------------------------------"
 echo "Running Tests"
 echo `python2.7 --version`
