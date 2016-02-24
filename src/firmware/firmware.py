@@ -6,6 +6,7 @@ import logging
 
 logger = logging.getLogger('peachy')
 
+
 class FirmwareUpdater(object):
     def __init__(self, dependancy_path, bootloader_idvendor, bootloader_idproduct, peachy_idvendor, peachy_idproduct):
         self._bootloader_idvendor = bootloader_idvendor

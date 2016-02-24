@@ -4,8 +4,8 @@ import logging
 
 from firmware import MacFirmwareUpdater, LinuxFirmwareUpdater, WindowsFirmwareUpdater
 
-
 logger = logging.getLogger('peachy')
+
 
 def get_firmware_updater(bootloader_idvendor=0x0483, bootloader_idproduct=0xdf11, peachy_idvendor=0x16d0, peachy_idproduct=0x0af3):
     print("Firmware Flash Is Frozen: {}".format(str(getattr(sys, 'frozen', False))))
