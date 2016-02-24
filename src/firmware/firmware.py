@@ -2,15 +2,16 @@ import sys
 import os
 import stat
 from subprocess import Popen, PIPE
+import logging
 
+logger = logging.getLogger('peachy')
 
 class FirmwareUpdater(object):
-    def __init__(self, dependancy_path, bootloader_idvendor, bootloader_idproduct, peachy_idvendor, peachy_idproduct, logger=None):
+    def __init__(self, dependancy_path, bootloader_idvendor, bootloader_idproduct, peachy_idvendor, peachy_idproduct):
         self._bootloader_idvendor = bootloader_idvendor
         self._bootloader_idproduct = bootloader_idproduct
         self._peachy_idvendor = peachy_idvendor
         self._peachy_idproduct = peachy_idproduct
-        self._logger = logger
 
         self.dependancy_path = dependancy_path
 
@@ -31,10 +32,9 @@ class FirmwareUpdater(object):
         (out, err) = process.communicate()
         exit_code = process.wait()
         if exit_code != 0:
-            if self._logger:
-                self._logger.error("Output: {}".format(out))
-                self._logger.error("Error: {}".format(err))
-                self._logger.error("Exit Code: {}".format(exit_code))
+            logger.error("Output: {}".format(out))
+            logger.error("Error: {}".format(err))
+            logger.error("Exit Code: {}".format(exit_code))
             raise Exception("Command failed")
         else:
             peachys = out.count(self.peachy_usb_address)
@@ -48,8 +48,7 @@ class FirmwareUpdater(object):
         elif (bootloaders == 0) and (peachy_printers <= 1):
             return False
         else:
-            if self._logger:
-                self._logger.error("{0} peachy printers and {1} bootloaders found".format(peachy_printers, bootloaders))
+            logger.error("{0} peachy printers and {1} bootloaders found".format(peachy_printers, bootloaders))
             raise Exception("{0} peachy printers and {1} bootloaders found".format(peachy_printers, bootloaders))
 
     def update(self, firmware_path):
@@ -86,13 +85,13 @@ class LinuxFirmwareUpdater(FirmwareUpdater):
             (out, err) = process.communicate()
             exit_code = process.wait()
             if exit_code != 0:
-                if self._logger:
-                    self._logger.error("Output: {}".format(out))
-                    self._logger.error("Error: {}".format(err))
-                    self._logger.error("Exit Code: {}".format(exit_code))
+                logger.error("Output: {}".format(out))
+                logger.error("Error: {}".format(err))
+                logger.error("Exit Code: {}".format(exit_code))
                 return False
             else:
                 return True
+
 
 class MacFirmwareUpdater(LinuxFirmwareUpdater):
 
@@ -107,7 +106,7 @@ class MacFirmwareUpdater(LinuxFirmwareUpdater):
     @property
     def check_usb_command(self):
         command = [os.path.join(self.dependancy_path, 'check_usb.sh')]
-        print command
+        logger.info("Check usb command: {}".format(command))
         return [os.path.join(self.dependancy_path, 'check_usb.sh')]
 
 
@@ -176,30 +175,4 @@ class WindowsFirmwareUpdater(FirmwareUpdater):
             raise Exception('Failed to switch driver')
 
 
-def get_firmware_updater(logger=None, bootloader_idvendor=0x0483, bootloader_idproduct=0xdf11, peachy_idvendor=0x16d0, peachy_idproduct=0x0af3):
-    if logger:
-        logger.info("Firmware Flash Is Frozen: {}".format(str(getattr(sys, 'frozen', False))))
-    if 'darwin' in sys.platform:
-        if getattr(sys, 'frozen', False):
-            dependancies_path = sys._MEIPASS
-        else:
-            dependancies_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'dependancies', 'mac')
-        if logger:
-            logger.info("Firmware Flash Dependancies Path: {}".format(dependancies_path))
-        return MacFirmwareUpdater(dependancies_path, bootloader_idvendor, bootloader_idproduct, peachy_idvendor, peachy_idproduct, logger)
-    elif 'win' in sys.platform:
-        if getattr(sys, 'frozen', False):
-            dependancies_path = sys._MEIPASS
-        else:
-            dependancies_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'dependancies', 'windows')
-        return WindowsFirmwareUpdater(dependancies_path, bootloader_idvendor, bootloader_idproduct, peachy_idvendor, peachy_idproduct, logger)
-    elif 'linux' in sys.platform:
-        if getattr(sys, 'frozen', False):
-            dependancies_path = sys._MEIPASS
-        else:
-            dependancies_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'dependancies', 'linux')
-        return LinuxFirmwareUpdater(dependancies_path, bootloader_idvendor, bootloader_idproduct, peachy_idvendor, peachy_idproduct, logger)
-    else:
-        if logger:
-            logger.error("Platform {} is unsupported for firmware updates".format(sys.platform))
-        raise Exception("Unsupported Platform")
+
