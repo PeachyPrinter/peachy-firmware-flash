@@ -126,31 +126,8 @@ class WindowsFirmwareUpdater(FirmwareUpdater):
         return '''wmic.exe path WIN32_PnPEntity where "DeviceID like 'USB\\\\VID_%'" get HardwareID'''
 
     @property
-    def driver_bin(self):
-        return os.path.join(self.dependancy_path, 'wdi-simple.exe')
-
-    @property
     def dfu_bin(self):
         return os.path.join(self.dependancy_path, 'DfuSeCommand.exe')
-
-    def switch_driver(self):
-        process = Popen(
-            [self.driver_bin, '-b'],
-            stdout=PIPE, stderr=PIPE)
-        (out, err) = process.communicate()
-        process.wait()
-
-        returned_lines = out.split('\n')
-        for line in returned_lines:
-            split_line = line.split(', ')
-            if (len(split_line) == 2) and ("RETURN" in split_line[0]):
-                driver_code = split_line[0].split(':')[1]
-        driver_code_message = split_line[1]
-
-        if driver_code:
-            self._logger.error("Driver Output: {0}".format(out))
-            self._logger.error("Driver Error Code: {0}, {1}".format(driver_code, driver_code_message))
-        return driver_code
 
     def update(self, firmware_path):
         process = Popen([
