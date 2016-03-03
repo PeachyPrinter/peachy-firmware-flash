@@ -45,6 +45,9 @@ coverage.xml
 *,cover
 .hypothesis/
 
+# Virtualenv
+venv/
+
 # Translations
 *.mo
 *.pot

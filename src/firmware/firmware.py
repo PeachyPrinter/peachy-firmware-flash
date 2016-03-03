@@ -131,7 +131,7 @@ class WindowsFirmwareUpdater(FirmwareUpdater):
 
     @property
     def dfu_bin(self):
-        return os.path.join(self.dependancy_path, 'dfu-util-static.exe')
+        return os.path.join(self.dependancy_path, 'DfuSeCommand.exe')
 
     def switch_driver(self):
         process = Popen(
@@ -153,27 +153,19 @@ class WindowsFirmwareUpdater(FirmwareUpdater):
         return driver_code
 
     def update(self, firmware_path):
-        driver_return = self.switch_driver()
-        if driver_return == 0:
-            process = Popen([
-                self.dfu_bin,
-                '-a', '0',
-                '--dfuse-address', '0x08000000',
-                '-D', firmware_path,
-                '-d', self.bootloader_usb_address
-                ], stdout=PIPE, stderr=PIPE)
-            (out, err) = process.communicate()
-            exit_code = process.wait()
-            if exit_code != 0:
-                if self._logger:
-                    self._logger.error("Output: {}".format(out))
-                    self._logger.error("Error: {}".format(err))
-                    self._logger.error("Exit Code: {}".format(exit_code))
-                return False
-            else:
-                return True
+        process = Popen([
+            self.dfu_bin,
+            '-c', '-u', '--fn', firmware_path], stdout=PIPE, stderr=PIPE)
+        (out, err) = process.communicate()
+        exit_code = process.wait()
+        if exit_code != 0:
+            if self._logger:
+                self._logger.error("Output: {}".format(out))
+                self._logger.error("Error: {}".format(err))
+                self._logger.error("Exit Code: {}".format(exit_code))
+            return False
         else:
-            raise Exception('Failed to switch driver')
+            return True
 
 
 
