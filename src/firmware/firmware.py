@@ -132,7 +132,7 @@ class WindowsFirmwareUpdater(FirmwareUpdater):
     def update(self, firmware_path):
         process = Popen([
             self.dfu_bin,
-            '-c', '-u', '--fn', firmware_path], stdout=PIPE, stderr=PIPE)
+            '-c', '-d', '--fn', firmware_path], stdout=PIPE, stderr=PIPE)
         (out, err) = process.communicate()
         exit_code = process.wait()
         if exit_code != 0:
