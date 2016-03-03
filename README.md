@@ -22,7 +22,8 @@ Mac 64bit (future)
 Usage
 --------------------------
 
-```import firmware
+```
+import firmware
 updater  = firmware.get_firmware_updater(logger=None, bootloader_idvendor=0x0483, bootloader_idproduct=0xdf11, peachy_idvendor=0x16d0, peachy_idproduct=0x0af3)
 updater.check_ready()      #<---True if one Bootloader is ready, Flase if 1 Bootload is not ready, Raises for any exceptions
 updater.update(path_to_firmware)       #<---True if Success, Flase if Failed, Rasies for unexpected behaviour
